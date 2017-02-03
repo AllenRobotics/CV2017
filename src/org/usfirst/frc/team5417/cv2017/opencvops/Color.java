@@ -35,6 +35,18 @@ public class Color {
 		this.b = (int)rgb[2];
 	}
 
+	public void put(float r, float g, float b) {
+		this.r = (int)r;
+		this.g = (int)g;
+		this.b = (int)b;
+	}
+	
+	public void put(short[] rgb) {
+		this.r = rgb[0];
+		this.g = rgb[1];
+		this.b = rgb[2];
+	}
+
 	public void put(int[] rgb) {
 		this.r = rgb[0];
 		this.g = rgb[1];

@@ -5,23 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.opencv.core.Mat;
-import org.usfirst.frc.team5417.cv2017.customops.BooleanMatrix;
-import org.usfirst.frc.team5417.cv2017.customops.FindDistanceOperation;
-import org.usfirst.frc.team5417.cv2017.customops.FindGroupsOperation;
-import org.usfirst.frc.team5417.cv2017.customops.FindTargetPointOperation;
-import org.usfirst.frc.team5417.cv2017.customops.MatchTemplatesOperation;
-import org.usfirst.frc.team5417.cv2017.customops.PixelMatrixOperation;
-import org.usfirst.frc.team5417.cv2017.customops.Pixel;
-import org.usfirst.frc.team5417.cv2017.customops.PixelMatrix;
-import org.usfirst.frc.team5417.cv2017.customops.Point;
-import org.usfirst.frc.team5417.cv2017.customops.PointD;
-import org.usfirst.frc.team5417.cv2017.customops.RemoveSmallGroupsOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.ImageScaleOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.OCVBGR2HSVOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.OCVDilationOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.OCVErosionOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.OCVFilterColorOperation;
-import org.usfirst.frc.team5417.cv2017.opencvops.OpenCVOperation;
+import org.usfirst.frc.team5417.cv2017.customops.*;
+import org.usfirst.frc.team5417.cv2017.opencvops.*;
 
 public class ComputerVision2017 {
 
@@ -54,37 +39,54 @@ public class ComputerVision2017 {
 		m = dilateOp.doOperation(m);
 		m = erodeOp.doOperation(m);
 
+		ComputerVisionResult cvResult = new ComputerVisionResult();
+
+		// OpenCV
+//		{
+//			OCVFindGroupsWithFillOperation findGroupsOp = new OCVFindGroupsWithFillOperation();
+//			m = findGroupsOp.doOperation(m);
+//
+//			// calculate the group sizes
+//			HashMap<Color, Integer> groupSizes = MatrixUtilities.getGroupSizes(m);
+//			OCVRemoveSmallGroupsOperation removeGroupsOp = new OCVRemoveSmallGroupsOperation(removeGroupsSmallerThan, groupSizes);
+//			m = removeGroupsOp.doOperation(m);
+
+//			cvResult.visionResult = m;
+//		}
+		
+		// PixelMatrix
+
 		// convert open cv mat to PixelMatrix
 		PixelMatrix pixelMatrix = new PixelMatrix(m);
 
-		// find groups (operates on gray scale, outputs color)
-		PixelMatrixOperation findGroupsOp = new FindGroupsOperation();
-
-		pixelMatrix = findGroupsOp.doOperation(pixelMatrix);
-
-		// calculate the group sizes
-		HashMap<Pixel, Integer> groupSizes = MatrixUtilities.getGroupSizes(pixelMatrix);
-
-		// remove all groups with too few pixels
-		PixelMatrixOperation removeGroupsOp = new RemoveSmallGroupsOperation(removeGroupsSmallerThan, groupSizes);
-
-		// remove all groups that don't match a template
-		PixelMatrixOperation matchTemplatesOp = new MatchTemplatesOperation(templatesToUse, minimumTemplateScale,
-				maximumTemplateScale, minimumTemplateMatchPercentage, groupSizes);
-
-		pixelMatrix = removeGroupsOp.doOperation(pixelMatrix);
-		pixelMatrix = matchTemplatesOp.doOperation(pixelMatrix);
-
-		ComputerVisionResult cvResult = new ComputerVisionResult();
-
-		cvResult.visionResult = pixelMatrix.toMat();
-//		cvResult.visionResult = m;
+		{
+			// find groups (operates on gray scale, outputs color)
+			PixelMatrixOperation findGroupsOp = new FindGroupsOperation();
+	
+			pixelMatrix = findGroupsOp.doOperation(pixelMatrix);
+	
+			// calculate the group sizes
+			HashMap<Pixel, Integer> groupSizes = MatrixUtilities.getGroupSizes(pixelMatrix);
+	
+			// remove all groups with too few pixels
+			PixelMatrixOperation removeGroupsOp = new RemoveSmallGroupsOperation(removeGroupsSmallerThan, groupSizes);
+	
+			// remove all groups that don't match a template
+			PixelMatrixOperation matchTemplatesOp = new MatchTemplatesOperation(templatesToUse, minimumTemplateScale,
+					maximumTemplateScale, minimumTemplateMatchPercentage, groupSizes);
+	
+			pixelMatrix = removeGroupsOp.doOperation(pixelMatrix);
+			pixelMatrix = matchTemplatesOp.doOperation(pixelMatrix);
+	
+			cvResult.visionResult = pixelMatrix.toMat();
+		}
+	
 
 		try {
 			HashMap<Pixel, Point> centersOfMass = MatrixUtilities.findCentersOfMass(pixelMatrix);
 			FindDistanceOperation findDistanceOp = new FindDistanceOperation(centersOfMass);
 
-			cvResult.distance = findDistanceOp.findDistance(pixelMatrix) * scaleOp.getInverseScaleFactor();
+			cvResult.distance = findDistanceOp.findDistance() * scaleOp.getInverseScaleFactor();
 
 			FindTargetPointOperation findTargetOp = new FindTargetPointOperation(centersOfMass);
 			

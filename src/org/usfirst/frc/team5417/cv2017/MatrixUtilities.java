@@ -206,10 +206,12 @@ public class MatrixUtilities {
 
 		HashMap<Color, Integer> groupsToCount = new HashMap<>();
 
+		int[] pixel = new int[3];
+		Color color = new Color(0, 0, 0);
 		for (int r = 0; r < m.rows(); r++) {
 			for (int c = 0; c < m.cols(); c++) {
 
-				double[] pixel = m.get(r, c);
+				m.get(r, c, pixel);
 
 				// if the pixel is black
 				if (pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0) {
@@ -217,12 +219,13 @@ public class MatrixUtilities {
 				}
 				// else the pixel is not black, so count the size of the group
 				else {
-					Color color = new Color(pixel);
+					color.put(pixel);
 					if (groupsToCount.containsKey(color)) {
 						Integer count = groupsToCount.get(color);
 						groupsToCount.put(color, count + 1);
 					} else {
-						groupsToCount.put(color, 1);
+						Color newColor = new Color(color.r, color.g, color.b);
+						groupsToCount.put(newColor, 1);
 					}
 				}
 			}

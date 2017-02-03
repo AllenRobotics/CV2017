@@ -20,7 +20,7 @@ public class FindDistanceOperation {
 		return "FindDistance";
 	}
 
-	public double findDistance(PixelMatrix m) throws Exception {
+	public double findDistance() throws Exception {
 
 		List<Point> centersOfMass = new ArrayList<Point>(this.centersOfMass.values());
 		
