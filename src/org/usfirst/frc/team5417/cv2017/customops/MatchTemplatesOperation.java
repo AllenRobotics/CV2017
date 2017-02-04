@@ -44,11 +44,10 @@ public class MatchTemplatesOperation implements PixelMatrixOperation {
 		
 		
 		// only generate this many scaleFactors
-		int numberOfScaleFactors = 20;
-		double stepSize = (maximumScale - minimumScale) / numberOfScaleFactors;
+		int numberOfScaleFactors = 10;
 		
 		List<Point> centers = findCenters(m);
-		List<Double> scaleFactors = generateScaleFactors(minimumScale, maximumScale, stepSize);
+		List<Double> scaleFactors = generateScaleFactors(minimumScale, maximumScale, numberOfScaleFactors);
 		
 		// pre-scale the templates to save a few CPU cycles
 		HashMap<Double, List<BooleanMatrix>> scaledTemplates = new HashMap<>();
@@ -170,21 +169,34 @@ public class MatchTemplatesOperation implements PixelMatrixOperation {
 		return result;
 	}
 	
-	private List<Double> generateScaleFactors(double min, double max, double step) {
+	private List<Double> generateScaleFactors(double min, double max, int numberOfScaleFactors) {
 		
 		List<Double> scales = new ArrayList<>();
-		scales.add(min);
-
-		double current = min + step;
 		
+		double halfCount = numberOfScaleFactors / 2;
+		double shrinkStep = (1.0 - min) / halfCount;
+		double growStep = (max - 1.0) / halfCount;
+		
+		scales.add(min);
+		double current = min + shrinkStep;
+		while (current < 1.0) {
+			scales.add(current);
+			current += shrinkStep;
+		}
+		
+		if (current != 1.0) {
+			scales.add(1.0);
+		}
+		
+		current = 1.0 + growStep;
 		while (current < max) {
 			scales.add(current);
-			current += step;
+			current += growStep;
 		}
-		
-		if (current != max) {
+				
+//		if (current != max) {
 			scales.add(max);
-		}
+//		}
 		
 		return scales;
 	}

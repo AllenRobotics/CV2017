@@ -41,6 +41,9 @@ public class ComputerVision2017 {
 
 		ComputerVisionResult cvResult = new ComputerVisionResult();
 
+		// dummy
+//		cvResult.visionResult = m;
+		
 		// OpenCV
 //		{
 //			OCVFindGroupsWithFillOperation findGroupsOp = new OCVFindGroupsWithFillOperation();
