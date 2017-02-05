@@ -9,10 +9,10 @@ import org.usfirst.frc.team5417.cv2017.MatrixUtilities;
 
 public class FindDistanceOperation {
 
-	private HashMap<Pixel, Point> centersOfMass;
+	private List<PointD> centersOfMass;
 	private double[] pixelsToFeetLookUpTable;
 
-	public FindDistanceOperation(HashMap<Pixel, Point> centersOfMass, double[] pixelsToFeetLookUpTable) {
+	public FindDistanceOperation(List<PointD> centersOfMass, double[] pixelsToFeetLookUpTable) {
 		this.centersOfMass = centersOfMass;
 		this.pixelsToFeetLookUpTable = pixelsToFeetLookUpTable;
 
@@ -24,11 +24,9 @@ public class FindDistanceOperation {
 
 	public double findDistanceInPixels() throws Exception {
 
-		List<Point> centersOfMass = new ArrayList<Point>(this.centersOfMass.values());
-
 		if (centersOfMass.size() == 2) {
-			Point groupCenter1 = centersOfMass.get(0);
-			Point groupCenter2 = centersOfMass.get(1);
+			PointD groupCenter1 = centersOfMass.get(0);
+			PointD groupCenter2 = centersOfMass.get(1);
 
 			double xDifference = (groupCenter2.getX() - groupCenter1.getX());
 			double yDifference = (groupCenter2.getY() - groupCenter1.getY());

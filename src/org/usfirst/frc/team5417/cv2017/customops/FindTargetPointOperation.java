@@ -6,9 +6,9 @@ import java.util.List;
 
 public class FindTargetPointOperation {
 
-	HashMap<Pixel, Point> centersOfMass;
+	List<PointD> centersOfMass;
 
-	public FindTargetPointOperation(HashMap<Pixel, Point> centersOfMass) {
+	public FindTargetPointOperation(List<PointD> centersOfMass) {
 		this.centersOfMass = centersOfMass;
 
 	}
@@ -19,11 +19,9 @@ public class FindTargetPointOperation {
 
 	public PointD findTargetPoint() throws Exception {
 
-		List<Point> centersOfMass = new ArrayList<Point>(this.centersOfMass.values());
-
 		if (centersOfMass.size() == 2) {
-			Point groupCenter1 = centersOfMass.get(0);
-			Point groupCenter2 = centersOfMass.get(1);
+			PointD groupCenter1 = centersOfMass.get(0);
+			PointD groupCenter2 = centersOfMass.get(1);
 
 			double xMidPoint = (groupCenter1.getX() + groupCenter2.getX()) / 2;
 			double yMidPoint = (groupCenter1.getY() + groupCenter2.getY()) / 2;

@@ -5,88 +5,101 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 import org.usfirst.frc.team5417.cv2017.customops.BooleanMatrix;
 import org.usfirst.frc.team5417.cv2017.customops.Point;
 import org.usfirst.frc.team5417.cv2017.MatrixUtilities;
 
 public class OCVMatchTemplatesOperation implements OpenCVOperation {
 
-	private static double[] blackPixel = { 0, 0, 0 };
-
-	public class CenterSum {
-		public BigInteger xSum = new BigInteger("0");
-		public BigInteger ySum = new BigInteger("0");
-		public int size = 0;
-
-	}
-
 	private List<BooleanMatrix> templates;
 	private double minimumScale, maximumScale;
 	private double minimumMatchPercentage;
-	private HashMap<Color, Integer> groupSizes;
-
-	
+	private List<Color> groupColors;
 	
 	@Override
 	public String name() { return "Open CV Match Templates"; }
 
-	public OCVMatchTemplatesOperation(List<BooleanMatrix> templates, double minimumScale, double maximumScale, double minimumMatchPercentage, HashMap<Color, Integer> groupSizes) {
+	public OCVMatchTemplatesOperation(List<BooleanMatrix> templates, double minimumScale, double maximumScale, double minimumMatchPercentage, List<Color> groupColors) {
 		this.templates = templates;
 		this.minimumScale = minimumScale;
 		this.maximumScale = maximumScale;
 		this.minimumMatchPercentage = minimumMatchPercentage;
-		this.groupSizes = groupSizes;
+		this.groupColors = groupColors;
 	}
 
 
 	@Override
 	public Mat doOperation(Mat m) {
 
-		Mat result = new Mat();
-		m.assignTo(result, CvType.CV_32SC3);
+		Mat result = m;
 		
 		// only generate this many scaleFactors
 		int numberOfScaleFactors = 10;
 		double stepSize = (maximumScale - minimumScale) / numberOfScaleFactors;
-		
-		List<Point> centers = findCenters(m);
+
 		List<Double> scaleFactors = generateScaleFactors(minimumScale, maximumScale, stepSize);
-		
-		// pre-scale the templates to save a few CPU cycles
-		HashMap<Double, List<BooleanMatrix>> scaledTemplates = new HashMap<>();
-		for (Double scaleFactor : scaleFactors) {
-			
-			List<BooleanMatrix> templatesForCurrentScale = new ArrayList<>();
-			for (BooleanMatrix template : this.templates) {
-				
-				BooleanMatrix scaledTemplate = template.scale(scaleFactor);		
-				templatesForCurrentScale.add(scaledTemplate);
-			}
 
-			scaledTemplates.put(scaleFactor, templatesForCurrentScale);
-		}
+		Scalar blackScalar = new Scalar(0);
+		Scalar whiteScalar = new Scalar(255);
+		Mat blackMat = new Mat(m.rows(), m.cols(), m.type());
 		
-		// now process the pre-scaled templates
-		for (Point center : centers) {
+		for (Color group : groupColors) {
 
-			Color groupColor = getGroupColor(m, center);
 			boolean doesGroupMatchAnyTemplate = false;
+
+			Scalar lowerBound = new Scalar(group.r, group.g, group.b);
+			Scalar upperBound = lowerBound;
+			
+			Mat justTheOneGroupMat = new Mat();
+			Core.inRange(m, lowerBound, upperBound, justTheOneGroupMat);
+			
+			int groupSize = Core.countNonZero(justTheOneGroupMat);
+
+			// find center using moments function (http://answers.opencv.org/question/460/finding-centroid-of-a-mask/)
+			Moments moments = Imgproc.moments(justTheOneGroupMat);
+			Point center = new Point(
+					(int)(moments.get_m10() / moments.get_m00()),
+					(int)(moments.get_m01() / moments.get_m00())
+					);
 			
 			for (Double scaleFactor : scaleFactors) {
-				
-				// get our list of pre-scaled templates for this scale
-				List<BooleanMatrix> templatesForCurrentScale = scaledTemplates.get(scaleFactor);
 
-				// process each scaled template one after the other
-				for (BooleanMatrix scaledTemplate : templatesForCurrentScale) {
+				for (BooleanMatrix template : this.templates) {
 
-					double matchPercentage = 0;
-					if (groupColor != null) {
-						matchPercentage = getMatchPercentage(m, scaledTemplate, center, groupColor, groupSizes);
-					}
+					int templateWidth = (int)Math.max(1, template.cols() * scaleFactor);
+					int templateHeight = (int)Math.max(1,  template.rows() * scaleFactor);
 					
+					int p1x = Math.max(0, center.getX() - templateWidth / 2);
+					int p1y = Math.max(0, center.getY() - templateHeight / 2);
+					int p2x = Math.min(m.cols(), p1x + templateWidth);
+					int p2y = Math.min(m.rows(), p1y + templateHeight);
+					
+					Mat templateMat = new Mat(m.rows(), m.cols(), CvType.CV_8UC1);
+					templateMat.setTo(blackScalar);
+					
+					Rect roi = new Rect(p1x, p1y, p2x - p1x, p2y - p1y);
+					Mat templateRoi = templateMat.submat(roi);
+					templateRoi.setTo(whiteScalar);
+					
+//					int templateSize = Core.countNonZero(templateMat);
+//					System.out.println(templateSize);
+					
+					int templateArea = templateWidth * templateHeight;
+					
+					Mat matchMat = new Mat();
+					Core.bitwise_and(justTheOneGroupMat, templateMat, matchMat);
+					
+					int matchSize = Core.countNonZero(matchMat);
+					
+					double matchPercentage = (double)(matchSize * 2) / (groupSize + templateArea);
+
 					if (matchPercentage < minimumMatchPercentage) {
 						// the match percentage is too low, so we need to get rid of this group
 						doesGroupMatchAnyTemplate = false;						
@@ -97,7 +110,7 @@ public class OCVMatchTemplatesOperation implements OpenCVOperation {
 						break;
 					}
 				}
-				
+
 				if (doesGroupMatchAnyTemplate) {
 					break;
 				}
@@ -105,74 +118,13 @@ public class OCVMatchTemplatesOperation implements OpenCVOperation {
 			
 			if (!doesGroupMatchAnyTemplate) {
 				// the match percentage is too low, so we need to get rid of this group
-				removeGroup(result, groupColor);
+				Core.bitwise_and(result, blackMat, result, justTheOneGroupMat);
 			}
 		}
 		
 		return result;
 	}
 
-	private void removeGroup(Mat m, Color groupColor) {
-
-		int[] pixel = new int[3];
-		for (int r = 0; r < m.rows(); r++) {
-			for (int c = 0; c < m.cols(); c++) {
-
-				m.get(r, c, pixel);
-				
-				if (pixel[0] == groupColor.r && pixel[1] == groupColor.g && pixel[2] == groupColor.b) {
-					m.put(r, c, blackPixel);
-				}
-			}
-		}
-	}
-	
-	private List<Point> findCenters(Mat m) {
-
-		HashMap<Color, CenterSum> groupsCenter = new HashMap<>();
-
-		int[] pixel = new int[3];
-		for (int r = 0; r < m.rows(); r++) {
-			for (int c = 0; c < m.cols(); c++) {
-
-				m.get(r, c, pixel);
-
-				if (!MatrixUtilities.isBlackPixel(pixel)) {
-					
-					Color color = new Color(pixel);
-					
-					if (groupsCenter.containsKey(color)) {
-						CenterSum sum = groupsCenter.get(color);
-						sum.xSum = sum.xSum.add(new BigInteger(new Integer(c).toString()));
-						sum.ySum = sum.ySum.add(new BigInteger(new Integer(r).toString()));
-						sum.size++;
-					} else {
-						CenterSum sum = new CenterSum();
-						sum.xSum = sum.xSum.add(new BigInteger(new Integer(c).toString()));
-						sum.ySum = sum.ySum.add(new BigInteger(new Integer(r).toString()));
-						sum.size++;
-						
-						groupsCenter.put(color, sum);
-					}
-				}
-			}
-		}
-
-		List<Point> result = new ArrayList<Point>();
-
-		for (Color color : groupsCenter.keySet()) {
-
-			CenterSum sum = groupsCenter.get(color);
-			int centerX = sum.xSum.divide(new BigInteger((new Integer(sum.size).toString()))).intValue();
-			int centerY = sum.ySum.divide(new BigInteger((new Integer(sum.size).toString()))).intValue();
-			
-			Point center = new Point(centerX, centerY);
-			result.add(center);
-		}
-
-		return result;
-	}
-	
 	private List<Double> generateScaleFactors(double min, double max, double step) {
 		
 		List<Double> scales = new ArrayList<>();
@@ -194,103 +146,6 @@ public class OCVMatchTemplatesOperation implements OpenCVOperation {
 		}
 		
 		return scales;
-	}
-	
-	private Color getGroupColor(Mat m, Point center) {
-		double[] centerPixel = m.get(center.getY(), center.getX());
-
-		if (!MatrixUtilities.isBlackPixel(centerPixel)) {
-			return new Color(centerPixel);
-		}
-		else {
-
-			// find the first non-black pixel closest to the the center.
-			// search outward from the center 
-			
-			int[] pixel = new int[3];
-			for (int offsetR = 1; offsetR < m.rows(); offsetR++) {
-				for (int offsetC = 1; offsetC < m.cols(); offsetC++) {
-
-					Point topLeftCorner = new Point(center.getX() - offsetC , center.getY() - offsetR);
-					Point bottomRightCorner = new Point(center.getX() + offsetC, center.getY() - offsetR);
-
-					// find the next concentric ring of pixels
-					for (int r = topLeftCorner.getY(); r < bottomRightCorner.getY(); ++r) {
-
-						// search the left vertical side
-						if (MatrixUtilities.isInImage(r, topLeftCorner.getX(), m.rows(), m.cols())) {
-							m.get(r, topLeftCorner.getX(), pixel);
-							if (!MatrixUtilities.isBlackPixel(pixel)) {
-								return new Color(pixel);
-							}
-						}
-
-						// search the right vertical side
-						if (MatrixUtilities.isInImage(r, bottomRightCorner.getX(), m.rows(), m.cols())) {
-							m.get(r, bottomRightCorner.getX(), pixel);
-							if (!MatrixUtilities.isBlackPixel(pixel)) {
-								return new Color(pixel);
-							}
-						}
-
-					}
-					for (int c = topLeftCorner.getX(); c < bottomRightCorner.getX(); ++c) {
-						// search the top row
-						if (MatrixUtilities.isInImage(topLeftCorner.getY(), c, m.rows(), m.cols())) {
-							m.get(topLeftCorner.getY(), c, pixel);
-							if (!MatrixUtilities.isBlackPixel(pixel)) {
-								return new Color(pixel);
-							}
-						}
-
-						// search the bottom row
-						if (MatrixUtilities.isInImage(bottomRightCorner.getY(), c, m.rows(), m.cols())) {
-							m.get(bottomRightCorner.getY(), c, pixel);
-							if (!MatrixUtilities.isBlackPixel(pixel)) {
-								return new Color(pixel);
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		// this can happen if there aren't any groups in the image
-		return null;
-	}
-	
-	private double getMatchPercentage(Mat m, BooleanMatrix template, Point center, Color groupColor, HashMap<Color, Integer> groupsToCount) {
-		
-		double templateSize = template.rows() * template.cols();
-
-		int matchCount = 0;
-		
-		int[] pixel = new int[3];
-		for (int r = 0; r < template.rows(); r++) {
-			for (int c = 0; c < template.cols(); c++) {
-				
-				int imageR = r + center.getY() - template.rows() / 2;
-				int imageC = c + center.getX() - template.cols() / 2;
-				
-				if (MatrixUtilities.isInImage(imageR,  imageC, m.rows(), m.cols())) {
-					m.get(imageR, imageC, pixel);
-					if (!MatrixUtilities.isBlackPixel(pixel)) {
-						if (pixel[0] == groupColor.r && pixel[1] == groupColor.g && pixel[2] == groupColor.b) {
-							matchCount++;
-						}
-						else {
-							int i = 10;
-							if (i % 4 == 0) {
-								System.out.println("000");
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		int groupSize = groupsToCount.get(groupColor);
-		return ((double)matchCount * 2.0) / (templateSize + groupSize);
 	}
 
 }

@@ -41,61 +41,38 @@ public class ComputerVision2017 {
 
 		ComputerVisionResult cvResult = new ComputerVisionResult();
 
+		List<PointD> centersOfMass;
+		
 		// dummy
 //		cvResult.visionResult = m;
 		
 		// OpenCV
-//		{
-//			OCVFindGroupsWithFillOperation findGroupsOp = new OCVFindGroupsWithFillOperation();
-//			m = findGroupsOp.doOperation(m);
-//
-//			// calculate the group sizes
-//			HashMap<Color, Integer> groupSizes = MatrixUtilities.getGroupSizes(m);
-//			OCVRemoveSmallGroupsOperation removeGroupsOp = new OCVRemoveSmallGroupsOperation(removeGroupsSmallerThan, groupSizes);
-//			m = removeGroupsOp.doOperation(m);
+		{
+			OCVFindGroupsWithFillOperation findGroupsOp = new OCVFindGroupsWithFillOperation();
+			m = findGroupsOp.doOperation(m);
 
-//			cvResult.visionResult = m;
-//		}
+			List<Color> groupColors = findGroupsOp.getOutputColors();
+			
+			// calculate the group sizes
+			OCVMatchTemplatesAndRemoveSmallGroupsOperation matchAndRemoveOp = new OCVMatchTemplatesAndRemoveSmallGroupsOperation(removeGroupsSmallerThan, templatesToUse, minimumTemplateScale,
+					maximumTemplateScale, minimumTemplateMatchPercentage, groupColors);
+			m = matchAndRemoveOp.doOperation(m);
+
+			centersOfMass = matchAndRemoveOp.getCentersOfMass();
+			
+			cvResult.visionResult = m;
+		}
 		
-		// PixelMatrix
-
-		// convert open cv mat to PixelMatrix
-//		PixelMatrix pixelMatrix = new PixelMatrix(m);
-//
-//		{
-//			// find groups (operates on gray scale, outputs color)
-//			PixelMatrixOperation findGroupsOp = new FindGroupsOperation();
-//	
-//			pixelMatrix = findGroupsOp.doOperation(pixelMatrix);
-//	
-//			// calculate the group sizes
-//			HashMap<Pixel, Integer> groupSizes = MatrixUtilities.getGroupSizes(pixelMatrix);
-//	
-//			// remove all groups with too few pixels
-//			PixelMatrixOperation removeGroupsOp = new RemoveSmallGroupsOperation(removeGroupsSmallerThan, groupSizes);
-//	
-//			// remove all groups that don't match a template
-//			PixelMatrixOperation matchTemplatesOp = new MatchTemplatesOperation(templatesToUse, minimumTemplateScale,
-//					maximumTemplateScale, minimumTemplateMatchPercentage, groupSizes);
-//	
-//			pixelMatrix = removeGroupsOp.doOperation(pixelMatrix);
-//			pixelMatrix = matchTemplatesOp.doOperation(pixelMatrix);
-//	
-//			cvResult.visionResult = pixelMatrix.toMat();
-//		}
-	
-
 		try {
-//			HashMap<Pixel, Point> centersOfMass = MatrixUtilities.findCentersOfMass(pixelMatrix);
-//			FindDistanceOperation findDistanceOp = new FindDistanceOperation(centersOfMass, distanceLookUpTable);
-//
-//			cvResult.distance = findDistanceOp.findDistanceInPixels() * scaleOp.getInverseScaleFactor();
-//			cvResult.distance = findDistanceOp.findDistanceInFeet(cvResult.distance);
-//
-//			FindTargetPointOperation findTargetOp = new FindTargetPointOperation(centersOfMass);
-//			
-//			cvResult.targetPoint = findTargetOp.findTargetPoint();
-//			cvResult.targetPoint = cvResult.targetPoint.adjustByScale(scaleOp.getInverseScaleFactor());
+			FindDistanceOperation findDistanceOp = new FindDistanceOperation(centersOfMass, distanceLookUpTable);
+
+			cvResult.distance = findDistanceOp.findDistanceInPixels() * scaleOp.getInverseScaleFactor();
+			cvResult.distance = findDistanceOp.findDistanceInFeet(cvResult.distance);
+
+			FindTargetPointOperation findTargetOp = new FindTargetPointOperation(centersOfMass);
+			
+			cvResult.targetPoint = findTargetOp.findTargetPoint();
+			cvResult.targetPoint = cvResult.targetPoint.adjustByScale(scaleOp.getInverseScaleFactor());
 			
 			cvResult.didSucceed = true;
 

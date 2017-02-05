@@ -28,8 +28,15 @@ import org.usfirst.frc.team5417.cv2017.customops.Pixel;
 //
 public class OCVFindGroupsWithFillOperation implements OpenCVOperation {
 
-	public String name() { return "Open CV Find Groups With Fill"; } 
+	private List<Color> outputColors = new ArrayList<>();
 
+	public String name() { return "Open CV Find Groups With Fill"; }
+	
+	public List<Color> getOutputColors() {
+		return outputColors;
+	}
+
+	
 	@Override
 	public Mat doOperation(Mat m) {
 
@@ -62,7 +69,9 @@ public class OCVFindGroupsWithFillOperation implements OpenCVOperation {
 			for (int x = 0; x < m.cols(); x++) {
 				colorImage.get(y, x, cellValue);
 				if (isUncoloredComponent(cellValue)) {
-					Pixel newColor = generateNewColor();
+					Color newColor = generateNewColor();
+					
+					this.outputColors.add(newColor);
 					
 					Mat mask = new Mat();
 					// flood fill with a new label
@@ -79,19 +88,19 @@ public class OCVFindGroupsWithFillOperation implements OpenCVOperation {
 	}
 	
 	private SecureRandom random = new SecureRandom();
-	private HashSet<Pixel> usedColors = new HashSet<>();
+	private HashSet<Color> usedColors = new HashSet<>();
 	
-	private boolean isCloseToBlack(Pixel color) {
+	private boolean isCloseToBlack(Color color) {
 		return color.r < 100 && color.g < 100 && color.b < 100;
 	}
 	
-	private boolean hasBeenUsedBefore(Pixel color) {
+	private boolean hasBeenUsedBefore(Color color) {
 		return usedColors.contains(color);
 	}
 	
-	private Pixel generateNewColor() {
+	private Color generateNewColor() {
 		// we use a mutable pixel here for speed, only creating Color objects as needed
-		Pixel newColor = new Pixel(0, 0, 0, 0, 0);
+		Color newColor = new Color(0, 0, 0);
 		
 		while (isCloseToBlack(newColor) || hasBeenUsedBefore(newColor))
 		{
