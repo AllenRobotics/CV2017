@@ -1,11 +1,9 @@
-package org.usfirst.frc.team5417.cv2017.customops;
+package org.usfirst.frc.team5417.cv2017.opencvops;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-
-import org.usfirst.frc.team5417.cv2017.MatrixUtilities;
 
 public class FindDistanceOperation {
 

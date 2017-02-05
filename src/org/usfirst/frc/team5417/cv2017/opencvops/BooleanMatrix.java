@@ -1,4 +1,4 @@
-package org.usfirst.frc.team5417.cv2017.customops;
+package org.usfirst.frc.team5417.cv2017.opencvops;
 
 //
 // BooleanMatrix class handles the nastiness of 2 dimensional jagged arrays.

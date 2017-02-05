@@ -12,24 +12,21 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
-import org.usfirst.frc.team5417.cv2017.customops.BooleanMatrix;
-import org.usfirst.frc.team5417.cv2017.customops.Point;
-import org.usfirst.frc.team5417.cv2017.MatrixUtilities;
+import org.usfirst.frc.team5417.cv2017.OpenCV;
 
 public class OCVMatchTemplatesOperation implements OpenCVOperation {
 
 	private List<BooleanMatrix> templates;
-	private double minimumScale, maximumScale;
+	private int numberOfScaleFactors;
 	private double minimumMatchPercentage;
 	private List<Color> groupColors;
 	
 	@Override
 	public String name() { return "Open CV Match Templates"; }
 
-	public OCVMatchTemplatesOperation(List<BooleanMatrix> templates, double minimumScale, double maximumScale, double minimumMatchPercentage, List<Color> groupColors) {
+	public OCVMatchTemplatesOperation(List<BooleanMatrix> templates, int numberOfScaleFactors, double minimumMatchPercentage, List<Color> groupColors) {
 		this.templates = templates;
-		this.minimumScale = minimumScale;
-		this.maximumScale = maximumScale;
+		this.numberOfScaleFactors = numberOfScaleFactors;
 		this.minimumMatchPercentage = minimumMatchPercentage;
 		this.groupColors = groupColors;
 	}
@@ -41,10 +38,7 @@ public class OCVMatchTemplatesOperation implements OpenCVOperation {
 		Mat result = m;
 		
 		// only generate this many scaleFactors
-		int numberOfScaleFactors = 10;
-		double stepSize = (maximumScale - minimumScale) / numberOfScaleFactors;
-
-		List<Double> scaleFactors = generateScaleFactors(minimumScale, maximumScale, stepSize);
+		List<Double> scaleFactors = OpenCV.generateScaleFactors(numberOfScaleFactors);
 
 		Scalar blackScalar = new Scalar(0);
 		Scalar whiteScalar = new Scalar(255);
@@ -123,29 +117,6 @@ public class OCVMatchTemplatesOperation implements OpenCVOperation {
 		}
 		
 		return result;
-	}
-
-	private List<Double> generateScaleFactors(double min, double max, double step) {
-		
-		List<Double> scales = new ArrayList<>();
-		scales.add(min);
-
-		if (step < .1) {
-			step = .1;
-		}
-		
-		double current = min + step;
-		
-		while (current < max) {
-			scales.add(current);
-			current += step;
-		}
-		
-		if (min != max && current != max) {
-			scales.add(max);
-		}
-		
-		return scales;
 	}
 
 }

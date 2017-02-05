@@ -13,7 +13,6 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.usfirst.frc.team5417.cv2017.customops.Pixel;
 
 //
 // see https://davidlavy.wordpress.com/opencv/connected-components-in-opencv/

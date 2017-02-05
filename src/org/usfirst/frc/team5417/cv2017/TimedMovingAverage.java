@@ -2,8 +2,6 @@ package org.usfirst.frc.team5417.cv2017;
 
 import java.util.PriorityQueue;
 
-import org.usfirst.frc.team5417.cv2017.customops.Pixel;
-
 public class TimedMovingAverage {
 
 	private class TimeAndValue implements Comparable<TimeAndValue>

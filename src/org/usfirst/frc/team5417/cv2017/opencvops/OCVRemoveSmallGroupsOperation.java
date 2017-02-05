@@ -9,9 +9,6 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
-import org.usfirst.frc.team5417.cv2017.customops.Pixel;
-import org.usfirst.frc.team5417.cv2017.customops.PixelMatrix;
-import org.usfirst.frc.team5417.cv2017.MatrixUtilities;
 
 public class OCVRemoveSmallGroupsOperation implements OpenCVOperation {
 
