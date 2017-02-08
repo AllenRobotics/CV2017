@@ -100,7 +100,11 @@ public class OCVMatchTemplatesAndRemoveSmallGroupsOperation implements OpenCVOpe
 						Mat matchMat = new Mat();
 						Core.bitwise_and(justTheOneGroupMat, templateMat, matchMat);
 
+						templateMat.release();
+						
 						int matchSize = Core.countNonZero(matchMat);
+						
+						matchMat.release();
 
 						double matchPercentage = (double) (matchSize * 2) / (groupSize + templateArea);
 
@@ -129,8 +133,11 @@ public class OCVMatchTemplatesAndRemoveSmallGroupsOperation implements OpenCVOpe
 				// this group
 				Core.bitwise_and(result, blackMat, result, justTheOneGroupMat);
 			}
+			
+			justTheOneGroupMat.release();
 		}
 
+		blackMat.release();
 		return result;
 	}
 

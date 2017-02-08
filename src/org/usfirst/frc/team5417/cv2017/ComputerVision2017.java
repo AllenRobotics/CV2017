@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.opencv.core.Mat;
-import org.usfirst.frc.team5417.cv2017.customops.*;
 import org.usfirst.frc.team5417.cv2017.opencvops.*;
 
 public class ComputerVision2017 {
@@ -18,8 +17,10 @@ public class ComputerVision2017 {
 		Mat m = reader.read();
 
 		ImageScaleOperation scaleOp = new ImageScaleOperation(m, largestDimensionSize);
-		m = scaleOp.resize();
-
+		Mat m2 = scaleOp.resize();
+		m.release();
+		m = m2;
+		
 		// m = MatrixUtilities.reverseColorChannels(m);
 
 		OCVBGR2HSVOperation bgr2hsvOp = new OCVBGR2HSVOperation();
@@ -35,9 +36,17 @@ public class ComputerVision2017 {
 		// keeps "healed" lines)
 		OpenCVOperation erodeOp = new OCVErosionOperation(dilateErodeKernelSize);
 
-		m = filterOp.doOperation(m);
-		m = dilateOp.doOperation(m);
-		m = erodeOp.doOperation(m);
+		m2 = filterOp.doOperation(m);
+		m.release();
+		m = m2;
+
+		m2 = dilateOp.doOperation(m);
+		m.release();
+		m = m2;
+
+		m2 = erodeOp.doOperation(m);
+		m.release();
+		m = m2;
 
 		ComputerVisionResult cvResult = new ComputerVisionResult();
 
@@ -49,7 +58,9 @@ public class ComputerVision2017 {
 		// OpenCV
 		{
 			OCVFindGroupsWithFillOperation findGroupsOp = new OCVFindGroupsWithFillOperation();
-			m = findGroupsOp.doOperation(m);
+			m2 = findGroupsOp.doOperation(m);
+			m.release();
+			m = m2;
 
 			List<Color> groupColors = findGroupsOp.getOutputColors();
 
@@ -58,7 +69,8 @@ public class ComputerVision2017 {
 					removeGroupsSmallerThan, templatesToUse, numberOfScaleFactors, minimumTemplateMatchPercentage,
 					groupColors);
 			m = matchAndRemoveOp.doOperation(m);
-
+			// don't need to release m here
+			
 			centersOfMass = matchAndRemoveOp.getCentersOfMass();
 
 			cvResult.visionResult = m;

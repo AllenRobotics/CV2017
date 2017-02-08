@@ -59,6 +59,7 @@ public class OCVFindGroupsWithFillOperation implements OpenCVOperation {
 				colorImage.put(y, x, colorValue);
 			}
 		}
+		binaryImage.release();
 		
 		//
 		// generate unique colors for each connected component
